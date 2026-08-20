@@ -19,6 +19,7 @@ repository.workspace = true
 [features]
 default = []
 
+display = []
 gpio = []
 hid = []
 parallel-ports = ["gpio"]

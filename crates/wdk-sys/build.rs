@@ -133,6 +133,8 @@ pub static mut {WDFFUNCTIONS_SYMBOL_NAME_PLACEHOLDER}: *const WDFFUNC = core::pt
 const ENABLED_API_SUBSETS: &[ApiSubset] = &[
     ApiSubset::Base,
     ApiSubset::Wdf,
+    #[cfg(feature = "display")]
+    ApiSubset::Display,
     #[cfg(feature = "gpio")]
     ApiSubset::Gpio,
     #[cfg(feature = "hid")]
@@ -153,6 +155,8 @@ const BINDGEN_FILE_GENERATORS_TUPLES: &[(&str, GenerateFn)] = &[
     ("types.rs", generate_types),
     ("base.rs", generate_base),
     ("wdf.rs", generate_wdf),
+    #[cfg(feature = "display")]
+    ("display.rs", generate_display),
     #[cfg(feature = "gpio")]
     ("gpio.rs", generate_gpio),
     #[cfg(feature = "hid")]
@@ -322,6 +326,40 @@ fn generate_wdf(out_path: &Path, config: &Config) -> Result<(), ConfigError> {
         );
         Ok(())
     }
+}
+
+#[cfg(feature = "display")]
+fn generate_display(out_path: &Path, config: &Config) -> Result<(), ConfigError> {
+    info!("Generating bindings to WDK: display.rs");
+
+    // Base, not Base+Wdf: a display miniport is a WDM-style driver. Pulling the
+    // WDF headers in here would add a surface this subset never uses.
+    let header_contents = config.bindgen_header_contents([ApiSubset::Base, ApiSubset::Display])?;
+    trace!(header_contents = ?header_contents);
+
+    let bindgen_builder = {
+        let mut builder = bindgen::Builder::wdk_default(config)?
+            .with_codegen_config((CodegenConfig::TYPES | CodegenConfig::VARS).complement())
+            .header_contents("display-input.h", &header_contents);
+
+        // Only allowlist files in the display-specific files to avoid
+        // duplicate definitions
+        for header_file in config.headers(ApiSubset::Display)? {
+            builder = builder.allowlist_file(format!("(?i).*{header_file}.*"));
+        }
+        if let Some(raw_lines) = config.bindgen_library_link_raw_lines(ApiSubset::Display) {
+            builder = builder.raw_line(raw_lines);
+        }
+        builder
+    };
+    trace!(bindgen_builder = ?bindgen_builder);
+
+    let output_file_path = out_path.join("display.rs");
+    Ok(bindgen_builder
+        .generate()
+        .expect("Bindings should succeed to generate")
+        .write_to_file(&output_file_path)
+        .map_err(|source| IoError::with_path(output_file_path, source))?)
 }
 
 #[cfg(feature = "gpio")]

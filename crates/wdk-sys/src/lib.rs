@@ -29,6 +29,16 @@ pub mod windows;
 #[cfg(any(driver_model__driver_type = "KMDF", driver_model__driver_type = "UMDF"))]
 pub mod wdf;
 
+// Display miniport is kernel-mode only: no UMDF arm here, on purpose.
+#[cfg(all(
+    any(
+        driver_model__driver_type = "WDM",
+        driver_model__driver_type = "KMDF"
+    ),
+    feature = "display"
+))]
+pub mod display;
+
 #[cfg(all(
     any(
         driver_model__driver_type = "WDM",

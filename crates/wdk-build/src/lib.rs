@@ -322,6 +322,12 @@ pub enum ApiSubset {
     Base,
     /// API subset required for WDF (Windows Driver Framework) drivers: <https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/_wdf/>
     Wdf,
+    /// API subset for display miniport drivers: <https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/_display/>
+    ///
+    /// This is the WDDM display miniport interface (`dispmprt.h`), which is
+    /// kernel-mode only. `dispmprt.h` transitively pulls in `d3dkmddi.h` and
+    /// `d3dkmdt.h` from the `shared` include directory.
+    Display,
     /// API subset for GPIO (General Purpose Input/Output) drivers: <https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/_gpio/>
     Gpio,
     /// API subset for HID (Human Interface Device) drivers: <https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/_hid/>
@@ -813,6 +819,7 @@ impl Config {
         let headers = match api_subset {
             ApiSubset::Base => self.base_headers(),
             ApiSubset::Wdf => self.wdf_headers(),
+            ApiSubset::Display => self.display_headers(),
             ApiSubset::Gpio => self.gpio_headers(),
             ApiSubset::Hid => self.hid_headers(),
             ApiSubset::ParallelPorts => self.parallel_ports_headers(),
@@ -848,6 +855,21 @@ impl Config {
             vec!["wdf.h"]
         } else {
             vec![]
+        }
+    }
+
+    #[tracing::instrument(level = "trace")]
+    /// Headers for the WDDM display miniport interface.
+    ///
+    /// `dispmprt.h` is the whole surface: it includes `video.h`, `d3dkmddi.h`
+    /// and `d3dkmdt.h` itself, so listing it alone is enough for bindgen.
+    ///
+    /// Display miniports are kernel-mode only. A UMDF config yields nothing,
+    /// rather than headers that could never be linked.
+    fn display_headers(&self) -> Vec<&'static str> {
+        match self.driver_config {
+            DriverConfig::Wdm | DriverConfig::Kmdf(_) => vec!["dispmprt.h"],
+            DriverConfig::Umdf(_) => Vec::new(),
         }
     }
 
@@ -1082,6 +1104,7 @@ impl Config {
         match api_subset {
             ApiSubset::Base => self.base_libraries(),
             ApiSubset::Hid => self.hid_libraries(),
+            ApiSubset::Display => self.display_libraries(),
             ApiSubset::Wdf
             | ApiSubset::Gpio
             | ApiSubset::ParallelPorts
@@ -1149,6 +1172,26 @@ impl Config {
     /// [`ApiSubset::Hid`].
     ///
     /// WDM/KMDF drivers link `VhfKm`, while UMDF drivers link `VhfUm`.
+    /// The import library for the display miniport interface.
+    ///
+    /// `displib.lib` is what provides `DxgkInitialize` and
+    /// `DxgkInitializeDisplayOnlyDriver`. Measured with
+    /// `dumpbin /LINKERMEMBER:1`, it exports 16 symbols: six functions
+    /// (`DxgkInitialize`, `DxgkInitializeDisplayOnlyDriver`,
+    /// `DxgkUnInitialize`, `DxgkIsFeatureEnabled2`, `DlpLoadDxgkrnl`,
+    /// `DlpUnloadDxgkrnl`) and ten `gDlpDxgkCb*` callback globals.
+    ///
+    /// Kernel-mode only: a UMDF config links nothing.
+    fn display_libraries(&self) -> Vec<LinkDirective> {
+        match &self.driver_config {
+            DriverConfig::Wdm | DriverConfig::Kmdf(_) => {
+                vec![LinkDirective::new("displib")]
+            }
+            DriverConfig::Umdf(_) => Vec::new(),
+        }
+    }
+
+    #[tracing::instrument(level = "trace")]
     fn hid_libraries(&self) -> Vec<LinkDirective> {
         match &self.driver_config {
             DriverConfig::Wdm | DriverConfig::Kmdf(_) => {
