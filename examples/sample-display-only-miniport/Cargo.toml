@@ -1,0 +1,29 @@
+[package]
+description = "A sample WDDM display-only miniport that links against displib"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+name = "sample-display-only-miniport"
+publish = false
+version = "0.0.0"
+
+[package.metadata.wdk.driver-model]
+driver-type = "WDM"
+
+[lib]
+crate-type = ["cdylib"]
+
+[build-dependencies]
+wdk-build.path = "../../crates/wdk-build"
+
+[dependencies]
+wdk.path = "../../crates/wdk"
+wdk-alloc.path = "../../crates/wdk-alloc"
+wdk-panic.path = "../../crates/wdk-panic"
+wdk-sys = { path = "../../crates/wdk-sys", features = ["display"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto = true
+panic = "abort"
