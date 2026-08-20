@@ -84,8 +84,10 @@ windows = "0.58.0"
 # target-umdf-version-minor = 33
 
 # Uncomment the section below for WDM
-# [workspace.metadata.wdk.driver-model]
-# driver-type = "WDM"
+# ⭐ winwayland: descomentado para a #66. O display miniport e' WDM, e sem
+# metadata o build.rs do wdk-sys nao sabe para qual modelo gerar bindings.
+[workspace.metadata.wdk.driver-model]
+driver-type = "WDM"
 
 # Until https://github.com/rust-lang/cargo/issues/12208 is resolved, each package in the workspace needs to explictly
 # add the following block to its Cargo manifest in order to enable these global lint configurations:
