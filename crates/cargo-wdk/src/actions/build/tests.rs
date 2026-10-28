@@ -479,7 +479,6 @@ pub fn given_a_driver_project_when_self_signed_exists_then_it_should_skip_callin
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_self_signed_cert_file_exists(&cwd, false)
@@ -533,7 +532,6 @@ pub fn given_a_driver_project_when_package_dir_exists_then_it_is_removed_and_rec
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_self_signed_cert_file_exists(&cwd, false)
@@ -684,7 +682,6 @@ pub fn given_a_driver_project_when_stampinf_command_execution_fails_then_package
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(
             driver_name,
             &cwd,
@@ -745,7 +742,6 @@ pub fn given_a_driver_project_when_inf2cat_command_execution_fails_then_package_
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(
             driver_name,
@@ -807,7 +803,6 @@ pub fn given_a_driver_project_when_certmgr_command_execution_fails_then_package_
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_infverif(driver_name, &cwd, None, None)
@@ -867,7 +862,6 @@ pub fn given_a_driver_project_when_makecert_command_execution_fails_then_package
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_infverif(driver_name, &cwd, None, None)
@@ -928,7 +922,6 @@ pub fn given_a_driver_project_when_signtool_command_execution_fails_then_package
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_infverif(driver_name, &cwd, None, None)
@@ -991,7 +984,6 @@ pub fn given_a_driver_project_when_infverif_command_execution_fails_then_package
         .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
         .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
         .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-        .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
         .expect_stampinf(driver_name, &cwd, target_arch, None)
         .expect_inf2cat(driver_name, &cwd, target_arch, None)
         .expect_infverif(driver_name, &cwd, None, Some(expected_output));
@@ -1306,7 +1298,6 @@ pub fn given_a_workspace_with_multiple_driver_and_non_driver_projects_when_cwd_i
         .expect_copy_driver_binary_sys_to_package_folder(driver_name_1, &workspace_root_dir, true)
         .expect_copy_pdb_file_to_package_folder(driver_name_1, &workspace_root_dir, true)
         .expect_copy_inx_file_to_package_folder(driver_name_1, &cwd, true, &workspace_root_dir)
-        .expect_copy_map_file_to_package_folder(driver_name_1, &workspace_root_dir, true)
         .expect_stampinf(driver_name_1, &workspace_root_dir, target_arch, None)
         .expect_inf2cat(driver_name_1, &workspace_root_dir, target_arch, None)
         .expect_self_signed_cert_file_exists(&workspace_root_dir, false)
@@ -1708,6 +1699,44 @@ pub fn given_a_workspace_only_with_non_driver_projects_when_cwd_is_workspace_mem
     );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Metadata error tests
+////////////////////////////////////////////////////////////////////////////////
+#[test]
+fn given_a_metadata_io_error_when_getting_metadata_then_cargo_metadata_error_is_preserved() {
+    let cwd = PathBuf::from(r"C:\tmp");
+    let mut test_build_action = TestBuildAction::new(cwd.clone(), None, None, false);
+    test_build_action
+        .mock_metadata_provider
+        .expect_get_cargo_metadata_at_path()
+        .once()
+        .return_once(|_, _, _, _| {
+            Err(cargo_metadata::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "selected Cargo executable is missing",
+            )))
+        });
+    let action =
+        initialize_build_action(&cwd, None, None, false, false, &test_build_action).unwrap();
+
+    let error = action.get_cargo_metadata(&cwd).unwrap_err();
+
+    let BuildActionError::CargoMetadata(ref source) = error else {
+        panic!("expected CargoMetadata error, got: {error:?}");
+    };
+    assert!(matches!(
+        source.downcast_ref::<cargo_metadata::Error>(),
+        Some(cargo_metadata::Error::Io(io_error)) if io_error.kind() == std::io::ErrorKind::NotFound
+    ));
+    assert_eq!(
+        error.to_string(),
+        "Failed to read Cargo metadata for the project/workspace"
+    );
+    assert!(
+        format!("{:#}", anyhow::Error::new(error)).contains("selected Cargo executable is missing")
+    );
+}
+
 fn assert_build_action_run_is_success(
     cwd: &PathBuf,
     profile: Option<Profile>,
@@ -1753,6 +1782,9 @@ fn initialize_build_action<'a>(
             profile,
             target_arch,
             sign_mode,
+            inf2cat_args: None,
+            stampinf_args: None,
+            infverif_args: None,
             is_sample_class: sample_class,
             locked: test_build_action.locked,
             target_platform: TargetPlatform::Universal,
@@ -1849,7 +1881,7 @@ impl TestBuildAction {
             sample_class,
             sign_mode: SignMode::Test {
                 verify_signature: false,
-                signtool_args: Vec::new(),
+                signtool_args: None,
             },
             locked: false,
             features: Features::default(),
@@ -1896,15 +1928,16 @@ impl TestBuildAction {
             vec![]
         };
         let expected_features = self.features.clone();
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
         self.mock_metadata_provider
             .expect_get_cargo_metadata_at_path()
-            .withf(
-                move |_working_dir: &Path, other_options: &Vec<String>, features: &Features| {
-                    *other_options == expected_options && *features == expected_features
-                },
-            )
+            .withf(move |cargo, _working_dir, other_options, features| {
+                cargo == Path::new(&expected_cargo)
+                    && *other_options == expected_options
+                    && *features == expected_features
+            })
             .once()
-            .returning(move |_, _, _| Ok(cargo_toml_metadata_clone.clone()));
+            .returning(move |_, _, _, _| Ok(cargo_toml_metadata_clone.clone()));
         self.cargo_metadata = Some(cargo_toml_metadata);
         self
     }
@@ -1936,15 +1969,16 @@ impl TestBuildAction {
             vec![]
         };
         let expected_features = self.features.clone();
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
         self.mock_metadata_provider
             .expect_get_cargo_metadata_at_path()
-            .withf(
-                move |_working_dir: &Path, other_options: &Vec<String>, features: &Features| {
-                    *other_options == expected_options && *features == expected_features
-                },
-            )
+            .withf(move |cargo, _working_dir, other_options, features| {
+                cargo == Path::new(&expected_cargo)
+                    && *other_options == expected_options
+                    && *features == expected_features
+            })
             .once()
-            .returning(move |_, _, _| Ok(cargo_toml_metadata_clone.clone()));
+            .returning(move |_, _, _, _| Ok(cargo_toml_metadata_clone.clone()));
         self.cargo_metadata = Some(cargo_toml_metadata);
         self
     }
@@ -1960,15 +1994,16 @@ impl TestBuildAction {
             vec![]
         };
         let expected_features = self.features.clone();
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
         self.mock_metadata_provider
             .expect_get_cargo_metadata_at_path()
-            .withf(
-                move |_working_dir: &Path, other_options: &Vec<String>, features: &Features| {
-                    *other_options == expected_options && *features == expected_features
-                },
-            )
+            .withf(move |cargo, _working_dir, other_options, features| {
+                cargo == Path::new(&expected_cargo)
+                    && *other_options == expected_options
+                    && *features == expected_features
+            })
             .once()
-            .returning(move |_, _, _| Ok(cargo_toml_metadata_clone.clone()));
+            .returning(move |_, _, _, _| Ok(cargo_toml_metadata_clone.clone()));
         self.cargo_metadata = Some(cargo_toml_metadata);
         self
     }
@@ -2032,7 +2067,6 @@ impl TestBuildAction {
             .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
             .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
             .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-            .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
             .expect_stampinf(driver_name, &cwd, target_arch, None)
             .expect_inf2cat(driver_name, &cwd, target_arch, None)
             .expect_self_signed_cert_file_exists(&cwd, false)
@@ -2064,7 +2098,6 @@ impl TestBuildAction {
             .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
             .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
             .expect_copy_inx_file_to_package_folder(driver_name, &cwd, true, &cwd)
-            .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
             .expect_stampinf(driver_name, &cwd, target_arch, None)
             .expect_inf2cat(driver_name, &cwd, target_arch, None)
             .expect_infverif(driver_name, &cwd, None, None)
@@ -2085,7 +2118,6 @@ impl TestBuildAction {
             .expect_copy_driver_binary_sys_to_package_folder(driver_name, &cwd, true)
             .expect_copy_pdb_file_to_package_folder(driver_name, &cwd, true)
             .expect_copy_inx_file_to_package_folder(driver_name, &cwd.join(driver_name), true, &cwd)
-            .expect_copy_map_file_to_package_folder(driver_name, &cwd, true)
             .expect_stampinf(driver_name, &cwd, target_arch, None)
             .expect_inf2cat(driver_name, &cwd, target_arch, None)
             .expect_self_signed_cert_file_exists(&cwd, false)
@@ -2168,7 +2200,6 @@ impl TestBuildAction {
         override_output: Option<Output>,
     ) -> Self {
         // cargo build on the package
-        let expected_cargo_command: &'static str = "cargo";
         let manifest_path = cwd
             .join("Cargo.toml")
             .to_string_lossy()
@@ -2205,17 +2236,15 @@ impl TestBuildAction {
             stdout: vec![],
             stderr: vec![],
         });
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
+        let expected_working_dir = cwd.to_path_buf();
         self.mock_run_command
             .expect_run()
-            .withf(
-                move |command: &str,
-                      args: &[&str],
-                      _env_vars: &Option<&HashMap<&str, &str>>,
-                      _working_dir: &Option<&Path>|
-                      -> bool {
-                    command == expected_cargo_command && args == expected_cargo_build_args
-                },
-            )
+            .withf(move |command, args, _env, working_dir| {
+                command.as_ref() == Path::new(&expected_cargo)
+                    && *working_dir == Some(expected_working_dir.as_path())
+                    && args == expected_cargo_build_args
+            })
             .once()
             .returning(move |_, _, _, _| Ok(expected_output.clone()));
         self
@@ -2244,18 +2273,14 @@ impl TestBuildAction {
         expected_args.push("--print".to_string());
         expected_args.push("cfg".to_string());
         let expected_args_for_err = expected_args.clone();
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
         self.mock_run_command
             .expect_run()
-            .withf(
-                move |command: &str,
-                      args: &[&str],
-                      _env_vars: &Option<&HashMap<&str, &str>>,
-                      working_dir: &Option<&Path>| {
-                    command == "cargo"
-                        && args == expected_args
-                        && working_dir.is_some_and(|d| d == expected_working_dir.as_path())
-                },
-            )
+            .withf(move |command, args, _env, working_dir| {
+                command.as_ref() == Path::new(&expected_cargo)
+                    && args == expected_args
+                    && working_dir.is_some_and(|d| d == expected_working_dir.as_path())
+            })
             .once()
             .returning(move |_, _, _, _| match override_output.clone() {
                 Some(output) => {
@@ -2434,45 +2459,6 @@ impl TestBuildAction {
         self
     }
 
-    fn expect_copy_map_file_to_package_folder(
-        mut self,
-        driver_name: &str,
-        driver_dir: &Path,
-        is_success: bool,
-    ) -> Self {
-        let expected_driver_name_underscored = driver_name.replace('-', "_");
-        let expected_target_dir = self.setup_target_dir(driver_dir);
-        let expected_final_package_dir_path =
-            expected_target_dir.join(format!("{expected_driver_name_underscored}_package"));
-        let mock_non_zero_bytes_copied_size = 1000u64;
-
-        // copy map file to package directory
-        let expected_src_driver_map_path = expected_target_dir
-            .join("deps")
-            .join(format!("{expected_driver_name_underscored}.map"));
-        let expected_dest_driver_map_path =
-            expected_final_package_dir_path.join(format!("{expected_driver_name_underscored}.map"));
-        self.mock_fs_provider
-            .expect_copy()
-            .with(
-                eq(expected_src_driver_map_path.clone()),
-                eq(expected_dest_driver_map_path.clone()),
-            )
-            .once()
-            .returning(move |_, _| {
-                if is_success {
-                    Ok(mock_non_zero_bytes_copied_size)
-                } else {
-                    Err(FileError::CopyError(
-                        expected_src_driver_map_path.clone(),
-                        expected_dest_driver_map_path.clone(),
-                        std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "copy error"),
-                    ))
-                }
-            });
-        self
-    }
-
     fn expect_copy_self_signed_cert_file_to_package_folder(
         mut self,
         driver_name: &str,
@@ -2556,17 +2542,19 @@ impl TestBuildAction {
             self.mock_run_command
                 .expect_run()
                 .withf(
-                    move |command: &str,
+                    move |command: &dyn AsRef<Path>,
                           args: &[&str],
                           _env_vars: &Option<&HashMap<&str, &str>>,
                           _working_dir: &Option<&Path>|
                           -> bool {
-                        println!("command: {command}, args: {args:?}");
+                        let command = command.as_ref();
+                        println!("command: {command:?}, args: {args:?}");
                         println!(
                             "expected_command: {expected_stampinf_command}, expected_args: \
                              {expected_stampinf_args:?}"
                         );
-                        command == expected_stampinf_command && args == expected_stampinf_args
+                        command == Path::new(expected_stampinf_command)
+                            && args == expected_stampinf_args
                     },
                 )
                 .once()
@@ -2620,17 +2608,18 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    println!("command: {command}, args: {args:?}");
+                    let command = command.as_ref();
+                    println!("command: {command:?}, args: {args:?}");
                     println!(
                         "expected_command: {expected_inf2cat_command}, expected_args: \
                          {expected_inf2cat_args:?}"
                     );
-                    command == expected_inf2cat_command && args == expected_inf2cat_args
+                    command == Path::new(expected_inf2cat_command) && args == expected_inf2cat_args
                 },
             )
             .once()
@@ -2660,12 +2649,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_certmgr_command && args == expected_certmgr_args
+                    command.as_ref() == Path::new(expected_certmgr_command)
+                        && args == expected_certmgr_args
                 },
             )
             .returning(move |_, _, _, _| match override_output.clone() {
@@ -2710,12 +2700,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_certmgr_command && args == expected_certmgr_args
+                    command.as_ref() == Path::new(expected_certmgr_command)
+                        && args == expected_certmgr_args
                 },
             )
             .once()
@@ -2759,12 +2750,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_makecert_command && args == expected_makecert_args
+                    command.as_ref() == Path::new(expected_makecert_command)
+                        && args == expected_makecert_args
                 },
             )
             .once()
@@ -2820,13 +2812,14 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run_with_redaction()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _redaction_indices: &[usize],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_signtool_command && args == expected_signtool_args
+                    command.as_ref() == Path::new(expected_signtool_command)
+                        && args == expected_signtool_args
                 },
             )
             .once()
@@ -2882,13 +2875,14 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run_with_redaction()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _redaction_indices: &[usize],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_signtool_command && args == expected_signtool_args
+                    command.as_ref() == Path::new(expected_signtool_command)
+                        && args == expected_signtool_args
                 },
             )
             .once()
@@ -2936,12 +2930,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_signtool_command && args == expected_signtool_verify_args
+                    command.as_ref() == Path::new(expected_signtool_command)
+                        && args == expected_signtool_verify_args
                 },
             )
             .once()
@@ -2989,12 +2984,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_signtool_command && args == expected_signtool_verify_args
+                    command.as_ref() == Path::new(expected_signtool_command)
+                        && args == expected_signtool_verify_args
                 },
             )
             .once()
@@ -3049,12 +3045,13 @@ impl TestBuildAction {
         self.mock_run_command
             .expect_run()
             .withf(
-                move |command: &str,
+                move |command: &dyn AsRef<Path>,
                       args: &[&str],
                       _env_vars: &Option<&HashMap<&str, &str>>,
                       _working_dir: &Option<&Path>|
                       -> bool {
-                    command == expected_infverif_command && args == expected_infverif_args
+                    command.as_ref() == Path::new(expected_infverif_command)
+                        && args == expected_infverif_args
                 },
             )
             .once()
@@ -3369,8 +3366,8 @@ fn create_cargo_build_output_json_with_manifest(
         _ => "debug",
     };
 
-    // For non-driver projects, use "lib" instead of "cdylib" to ensure BuildTask
-    // returns DllNotFound
+    // For non-driver projects, use "lib" instead of "cdylib" to ensure
+    // BuildTask returns DllNotFound
     let (kind, crate_types, file_ext) = if is_driver {
         ("cdylib", "cdylib", "dll")
     } else {
@@ -3605,7 +3602,6 @@ mod get_target_dir_from_output {
 
 mod get_target_arch_from_cargo_rustc {
     use std::{
-        collections::HashMap,
         path::{Path, PathBuf},
         process::{ExitStatus, Output},
     };
@@ -3742,20 +3738,15 @@ mod get_target_arch_from_cargo_rustc {
         }
         expected_args.extend(features_to_cargo_args(&test_build_action.features));
         expected_args.extend(["--", "--print", "cfg"].map(String::from));
+        let expected_cargo = std::env::var_os("CARGO").expect("run tests through cargo test");
         test_build_action
             .mock_run_command
             .expect_run()
-            .withf(
-                move |command: &str,
-                      args: &[&str],
-                      _env_vars: &Option<&HashMap<&str, &str>>,
-                      working_dir: &Option<&Path>|
-                      -> bool {
-                    command == "cargo"
-                        && args == expected_args
-                        && matches!(working_dir, Some(dir) if *dir == cwd.as_path())
-                },
-            )
+            .withf(move |command, args, _env, working_dir| {
+                command.as_ref() == Path::new(&expected_cargo)
+                    && args == expected_args
+                    && matches!(working_dir, Some(dir) if *dir == cwd.as_path())
+            })
             .once()
             .returning(move |_, _, _, _| {
                 Ok(Output {

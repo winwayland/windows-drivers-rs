@@ -153,6 +153,13 @@ fn verify_project_creation(driver_type: &str, tmp_dir: &TempDir) -> PathBuf {
     tmp_dir
         .child(driver_name_path.join("src").join("lib.rs"))
         .assert(predicates::str::is_empty().not());
+    if driver_type == "umdf" {
+        tmp_dir
+            .child(driver_name_path.join("src").join("lib.rs"))
+            .assert(predicates::str::contains(
+                "wdk_panic::install_panic_hook();",
+            ));
+    }
     tmp_dir
         .child(driver_name_path.join(".cargo").join("config.toml"))
         .assert(predicates::str::contains("target-feature=+crt-static"));
@@ -168,8 +175,8 @@ fn verify_project_build(path: &std::path::Path) {
     let output = cmd_assertion.get_output();
     let stderr: String = String::from_utf8_lossy(&output.stderr).into();
 
-    // Assert build output contains expected errors (the INF file is intentionally
-    // incomplete)
+    // Assert build output contains expected errors (the INF file is
+    // intentionally incomplete)
     assert!(
         stderr.contains(
             "Required directive Provider missing, empty, or invalid in [Version] section."

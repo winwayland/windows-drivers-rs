@@ -2,6 +2,7 @@
 mod test_utils;
 use std::{
     env,
+    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
     process::Command,
@@ -17,6 +18,35 @@ const NUGET_PACKAGES_ROOT_ENV_VAR: &str = "NugetPackagesRoot";
 const FULL_VERSION_NUMBER_ENV_VAR: &str = "FullVersionNumber";
 const X86_64_TARGET_TRIPLE_NAME: &str = "x86_64-pc-windows-msvc";
 const AARCH64_TARGET_TRIPLE_NAME: &str = "aarch64-pc-windows-msvc";
+
+#[test]
+fn build_fails_when_cargo_path_does_not_exist() {
+    let project_path = "tests/kmdf-driver";
+    with_mutex(project_path, || {
+        Command::new(
+            env::var_os("CARGO").expect("CARGO is not set; run tests through `cargo test`"),
+        )
+        .args(["metadata", "--no-deps", "--format-version", "1", "--locked"])
+        .current_dir(project_path)
+        .assert()
+        .success();
+
+        let cargo = Path::new("nonexistent-cargo.exe");
+        let mut cmd = create_cargo_wdk_cmd("build", Some(&["--locked"]), None, Some(project_path));
+        cmd.env("CARGO", cargo);
+
+        let assertion = cmd.assert().failure();
+        let stderr = String::from_utf8_lossy(&assertion.get_output().stderr);
+        assert!(
+            stderr.contains("Failed to read Cargo metadata for the project/workspace"),
+            "expected a metadata error, got: {stderr}"
+        );
+        assert!(
+            stderr.contains("failed to start `cargo metadata`"),
+            "expected a launch failure for the selected Cargo executable, got: {stderr}"
+        );
+    });
+}
 
 #[test]
 fn mixed_package_kmdf_workspace_builds_successfully() {
@@ -85,10 +115,16 @@ fn kmdf_driver_builds_successfully_with_locked_flag() {
 
     // `--locked` must be forwarded to the `cargo rustc` (target-arch probe) and
     // `cargo build` invocations.
+    let cargo = env::var_os("CARGO").expect("run integration tests through cargo test");
     for subcommand in ["rustc", "build"] {
         let invocation = stderr
             .lines()
-            .find(|line| line.contains(&format!("Running: cargo [\"{subcommand}\"")))
+            .find(|line| {
+                line.contains(&format!(
+                    "Running: {} [\"{subcommand}\"",
+                    cargo.to_string_lossy()
+                ))
+            })
             .unwrap_or_else(|| {
                 panic!("no `cargo {subcommand}` invocation found in stderr:\n{stderr}")
             });
@@ -376,7 +412,7 @@ mod sign_mode {
             let package_dir = format!("{target_dir}/{driver_name}_package");
 
             assert_dir_exists(&package_dir);
-            for ext in ["cat", "inf", "map", "pdb", "sys"] {
+            for ext in ["cat", "inf", "pdb", "sys"] {
                 assert_file_exists(&format!("{package_dir}/{driver_name}.{ext}"));
             }
 
@@ -417,8 +453,9 @@ mod sign_mode {
                 cert_in_package.display()
             );
 
-            // Rebuild with signing off (no clean in between). The package folder is
-            // reassembled fresh, so the stale cert must not be present.
+            // Rebuild with signing off (no clean in between). The package
+            // folder is reassembled fresh, so the stale cert must
+            // not be present.
             run_build_cmd(&project_path, Some(&["--sign-mode", "off"]), None);
             assert!(
                 !cert_in_package.exists(),
@@ -427,7 +464,7 @@ mod sign_mode {
             );
 
             assert_dir_exists(&package_dir);
-            for ext in ["cat", "inf", "map", "pdb", "sys"] {
+            for ext in ["cat", "inf", "pdb", "sys"] {
                 assert_file_exists(&format!("{package_dir}/{driver_name}.{ext}"));
             }
         });
@@ -469,7 +506,7 @@ mod signtool_args {
                 &project_path,
                 Some(&[
                     "--signtool-args",
-                    "/s WDRCustomTestStore /n WDRCustomTestCert /fd SHA256",
+                    "-s WDRCustomTestStore /n WDRCustomTestCert -fd SHA256",
                 ]),
                 None,
             );
@@ -508,9 +545,10 @@ mod signtool_args {
             let driver_name = driver.replace('-', "_");
             let common_args = "/s WDRTestCertStore /n WDRLocalTestCert /fd SHA256";
 
-            // The build copies the driver binary into the package folder and signs
-            // the copy, leaving the original under `target/debug` unsigned. We pass
-            // that unsigned original as an extra signtool operand and assert the
+            // The build copies the driver binary into the package folder and
+            // signs the copy, leaving the original under
+            // `target/debug` unsigned. We pass that unsigned
+            // original as an extra signtool operand and assert the
             // build signs it too.
             let extra = env::current_dir()
                 .expect("cwd")
@@ -625,7 +663,8 @@ mod signtool_args {
             for ext in ["cat", "inf", "sys"] {
                 assert_file_exists(&format!("{package_dir}/driver.{ext}"));
             }
-            // Passthrough signing does not generate/copy the WDR test cert file.
+            // Passthrough signing does not generate/copy the WDR test cert
+            // file.
             assert!(
                 !PathBuf::from(format!("{package_dir}/WDRLocalTestCert.cer")).exists(),
                 "passthrough signing should not emit WDRLocalTestCert.cer"
@@ -687,8 +726,9 @@ mod signtool_args {
     }
 
     fn authenticode_signer_subject(path: &Path) -> Option<String> {
-        // Escape single quotes for the PowerShell single-quoted string literal so
-        // paths containing `'` don't break the generated `-Command` script.
+        // Escape single quotes for the PowerShell single-quoted string literal
+        // so paths containing `'` don't break the generated `-Command`
+        // script.
         let literal_path = path.display().to_string().replace('\'', "''");
         let script = format!(
             "$s = Get-AuthenticodeSignature -LiteralPath '{literal_path}'; if \
@@ -717,6 +757,85 @@ mod signtool_args {
             Some(subject)
         }
     }
+}
+
+#[test]
+fn kmdf_driver_with_custom_inf2cat_args_builds_successfully() {
+    let driver = "kmdf-driver";
+    let host_os_ids = match env::consts::ARCH {
+        "x86_64" => "10_x64,10_CO_X64",
+        "aarch64" => "Server10_arm64,10_CO_ARM64",
+        other => panic!("Unsupported host architecture '{other}'. Expected 'x86_64' or 'aarch64'."),
+    };
+    let inf2cat_args = format!("/os:{host_os_ids} /uselocaltime /verbose /pageHashes");
+    clean_build_and_verify_project(
+        "kmdf",
+        driver,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(&["--inf2cat-args", inf2cat_args.as_str()]),
+    );
+}
+
+/// Functional tests for the `--stampinf-args` passthrough.
+mod stampinf_args {
+    use super::*;
+
+    #[test]
+    fn kmdf_driver_with_custom_date_and_version_builds_successfully() {
+        let driver = "kmdf-driver";
+        clean_build_and_verify_project(
+            "kmdf",
+            driver,
+            None,
+            Some("01/01/2026,4.3.2.1"),
+            None,
+            None,
+            None,
+            None,
+            Some(&["--stampinf-args", "-d 01/01/2026 /v 4.3.2.1"]),
+        );
+    }
+
+    #[test]
+    fn custom_version_wins_over_stampinf_version_env_var() {
+        let driver = "kmdf-driver";
+        let env = [(STAMPINF_VERSION_ENV_VAR, Some("9.9.9.9".to_string()))];
+        clean_build_and_verify_project(
+            "kmdf",
+            driver,
+            None,
+            Some("4.3.2.1"),
+            None,
+            None,
+            Some(&env),
+            None,
+            Some(&["--stampinf-args", "/v 4.3.2.1"]),
+        );
+    }
+}
+
+#[test]
+fn kmdf_driver_with_custom_infverif_args_builds_successfully() {
+    let stderr = clean_build_and_verify_project(
+        "kmdf",
+        "kmdf-driver",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(&["--infverif-args", "-rulever 10.0.22621 /stampinf", "-v"]),
+    );
+    assert!(
+        stderr.contains("\"-rulever\", \"10.0.22621\", \"/stampinf\""),
+        "expected `--infverif-args` to be forwarded to `infverif`; stderr:\n{stderr}"
+    );
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -865,18 +984,13 @@ fn verify_driver_package_files(
     // Verify files exist in package folder
     assert_dir_exists(&package_path);
 
-    for ext in ["cat", "inf", "map", "pdb", driver_binary_extension] {
+    for ext in ["cat", "inf", "pdb", driver_binary_extension] {
         assert_file_exists(&format!("{package_path}/{driver_name}.{ext}"));
     }
 
     assert_file_exists(&format!("{package_path}/WDRLocalTestCert.cer"));
 
     // Verify hashes of files copied from debug to package folder
-    assert_file_hash(
-        &format!("{package_path}/{driver_name}.map"),
-        &format!("{target_folder_path}/deps/{driver_name}.map"),
-    );
-
     assert_file_hash(
         &format!("{package_path}/{driver_name}.pdb"),
         &format!("{target_folder_path}/{driver_name}.pdb"),
@@ -935,10 +1049,21 @@ fn assert_driver_ver(package_path: &str, driver_name: &str, driver_version: Opti
     };
 
     // Example: DriverVer = 09/13/2023,1.0.0.0
+    let (driver_date, driver_version) = match driver_version {
+        Some(val) if val.contains(',') => {
+            let (d, v) = val.split_once(',').unwrap();
+            let d = (!d.is_empty()).then_some(d);
+            let v = (!v.is_empty()).then_some(v);
+            (d, v)
+        }
+        _ => (None, driver_version),
+    };
+
+    let driver_date_regex = driver_date.map_or_else(|| r"\d+/\d+/\d+".to_string(), regex::escape);
     let driver_version_regex =
         driver_version.map_or_else(|| r"\d+\.\d+\.\d+\.\d+".to_string(), regex::escape);
     let re = regex::Regex::new(&format!(
-        r"^DriverVer\s+=\s+\d+/\d+/\d+,{driver_version_regex}$"
+        r"^DriverVer\s+=\s+{driver_date_regex},{driver_version_regex}$"
     ))
     .unwrap();
 
@@ -949,12 +1074,16 @@ fn assert_driver_ver(package_path: &str, driver_name: &str, driver_version: Opti
     assert!(re.captures(line).is_some());
 }
 
-// Helper to hash a file
 fn digest_file<P: AsRef<Path>>(path: P) -> String {
     let file_contents = fs::read(&path)
         .unwrap_or_else(|e| panic!("Failed to read file at {}: {}", path.as_ref().display(), e));
-    let result = Sha256::digest(&file_contents);
-    format!("{result:x}")
+
+    Sha256::digest(&file_contents)
+        .into_iter()
+        .fold(String::from("0x"), |mut hex_digest, byte| {
+            write!(&mut hex_digest, "{byte:02x}").expect("writing to a String should succeed");
+            hex_digest
+        })
 }
 
 /// Returns the `WDKContentRoot` path derived from the Nuget WDK package, if the
@@ -979,8 +1108,8 @@ fn nuget_wdk_content_root_path(target_arch: &str) -> Option<String> {
 
     // NuGet WDK package folder names use `x64` (lowercase and not `amd64`) and
     // `ARM64` (uppercase) whereas `cargo-wdk` CLI uses `amd64` / `arm64`
-    // (case-insensitive), so we normalize here in order to locate the right package
-    // folder during tests.
+    // (case-insensitive), so we normalize here in order to locate the right
+    // package folder during tests.
     let target_arch_lower = target_arch.to_ascii_lowercase();
     let nuget_arch = match target_arch_lower.as_str() {
         "amd64" | "x64" | "x86_64" => "x64",

@@ -30,8 +30,8 @@ use crate::{ConfigError, CpuArchitecture, IoError, TwoPartVersion};
 /// NI(22H2) WDK
 #[must_use]
 pub fn detect_wdk_content_root() -> Option<PathBuf> {
-    // If WDKContentRoot is present in environment(ex. running in an eWDK prompt),
-    // use it
+    // If WDKContentRoot is present in environment(ex. running in an eWDK
+    // prompt), use it
     if let Ok(wdk_content_root) = env::var("WDKContentRoot") {
         let path = Path::new(wdk_content_root.as_str());
         if path.is_dir() {
@@ -43,7 +43,8 @@ pub fn detect_wdk_content_root() -> Option<PathBuf> {
         );
     }
 
-    // If MicrosoftKitRoot environment variable is set, use it to set WDKContentRoot
+    // If MicrosoftKitRoot environment variable is set, use it to set
+    // WDKContentRoot
     if let Ok(microsoft_kit_root) = env::var("MicrosoftKitRoot") {
         let path = Path::new(microsoft_kit_root.as_str());
 
@@ -241,8 +242,16 @@ fn read_registry_key_string_value(
     // SAFETY: `&mut opened_key_handle` is coerced to a &raw mut, so the address passed as the
     // argument is always valid. `&mut opened_key_handle` is coerced to a pointer of the correct
     // type.
-    unsafe { RegOpenKeyExA(key_handle, sub_key, 0, KEY_READ, &raw mut opened_key_handle) }
-        .is_ok()
+    unsafe {
+        RegOpenKeyExA(
+            key_handle,
+            sub_key,
+            None,
+            KEY_READ,
+            &raw mut opened_key_handle,
+        )
+    }
+    .is_ok()
     {
         if
         // SAFETY: `opened_key_handle` is valid key opened with the `KEY_QUERY_VALUE` access right
@@ -283,8 +292,8 @@ fn read_registry_key_string_value(
             }
             .is_ok()
             {
-                // SAFETY: `opened_key_handle` is valid opened key that was opened by
-                // `RegOpenKeyExA`
+                // SAFETY: `opened_key_handle` is valid opened key that was
+                // opened by `RegOpenKeyExA`
                 unsafe { RegCloseKey(opened_key_handle) }
                     .ok()
                     .expect("opened_key_handle should be successfully closed");
@@ -366,8 +375,8 @@ where
     K: AsRef<OsStr>,
     V: AsRef<OsStr>,
 {
-    // SAFETY: this function is only conditionally compiled for windows targets, and
-    // env::set_var is always safe for windows targets
+    // SAFETY: this function is only conditionally compiled for windows targets,
+    // and env::set_var is always safe for windows targets
     unsafe {
         env::set_var(key, value);
     }
@@ -401,8 +410,8 @@ pub fn remove_var<K>(key: K)
 where
     K: AsRef<OsStr>,
 {
-    // SAFETY: this function is only conditionally compiled for windows targets, and
-    // env::remove_var is always safe for windows targets
+    // SAFETY: this function is only conditionally compiled for windows targets,
+    // and env::remove_var is always safe for windows targets
     unsafe {
         env::remove_var(key);
     }
@@ -426,16 +435,16 @@ mod tests {
 
     use super::*;
 
-    // Function with_clean_env clears the inputted environment variable and runs the
-    // closure
+    // Function with_clean_env clears the inputted environment variable and runs
+    // the closure
     fn with_clean_env<F>(key: &str, f: F)
     where
         F: FnOnce(),
     {
         let original = env::var(key).ok();
 
-        // SAFETY: We have verified that this is built for a Windows host due to no
-        // compile errors from building `set_var`.
+        // SAFETY: We have verified that this is built for a Windows host due to
+        // no compile errors from building `set_var`.
         unsafe {
             env::remove_var(key);
         }
@@ -443,14 +452,14 @@ mod tests {
         f();
 
         if let Some(val) = &original {
-            // SAFETY: We have verified that this is built for a Windows host due to no
-            // compile errors from building `set_var`.
+            // SAFETY: We have verified that this is built for a Windows host
+            // due to no compile errors from building `set_var`.
             unsafe {
                 env::set_var(key, val);
             }
         } else {
-            // SAFETY: We have verified that this is built for a Windows host due to no
-            // compile errors from building `set_var`.
+            // SAFETY: We have verified that this is built for a Windows host
+            // due to no compile errors from building `set_var`.
             unsafe {
                 env::remove_var(key);
             }
@@ -482,8 +491,8 @@ mod tests {
                     s!("ProgramFilesDir")
                 ),
                 Some(
-                    // SAFETY: program_files_dir pointer stays valid for reads up until and
-                    // including its terminating null
+                    // SAFETY: program_files_dir pointer stays valid for reads
+                    // up until and including its terminating null
                     unsafe { program_files_dir.to_string() }
                         .expect("Path resolved from FOLDERID_ProgramFiles should be valid UTF16.")
                 )

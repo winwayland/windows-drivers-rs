@@ -33,6 +33,7 @@ use wdk_build::{
     metadata::{TryFromCargoMetadataError, Wdk},
 };
 
+use crate::actions::cargo::{cargo_path, run_cargo};
 #[double]
 use crate::providers::{exec::CommandExec, fs::Fs, metadata::Metadata, wdk_build::WdkBuild};
 
@@ -79,6 +80,9 @@ pub struct BuildActionParams<'a> {
     pub profile: Option<&'a Profile>,
     pub target_arch: Option<CpuArchitecture>,
     pub sign_mode: SignMode,
+    pub inf2cat_args: Option<Vec<String>>,
+    pub stampinf_args: Option<Vec<String>>,
+    pub infverif_args: Option<Vec<String>>,
     pub is_sample_class: bool,
     pub locked: bool,
     pub target_platform: TargetPlatform,
@@ -93,6 +97,9 @@ pub struct BuildAction<'a> {
     profile: Option<&'a Profile>,
     target_arch: Option<CpuArchitecture>,
     sign_mode: SignMode,
+    inf2cat_args: Option<Vec<String>>,
+    stampinf_args: Option<Vec<String>>,
+    infverif_args: Option<Vec<String>>,
     is_sample_class: bool,
     locked: bool,
     target_platform: TargetPlatform,
@@ -141,6 +148,9 @@ impl<'a> BuildAction<'a> {
             profile: params.profile,
             target_arch: params.target_arch,
             sign_mode: params.sign_mode.clone(),
+            inf2cat_args: params.inf2cat_args.clone(),
+            stampinf_args: params.stampinf_args.clone(),
+            infverif_args: params.infverif_args.clone(),
             is_sample_class: params.is_sample_class,
             locked: params.locked,
             target_platform: params.target_platform,
@@ -165,15 +175,15 @@ impl<'a> BuildAction<'a> {
     ///   initializing the package task.
     /// * `BuildActionError::PackageTask` - If there is an error during the
     ///   package task process.
-    /// * `BuildActionError::CargoMetadataParse` - If it is not a valid rust
-    ///   project/workspace and error parsing Cargo.toml.
+    /// * `BuildActionError::CargoMetadata` - If `CARGO` is missing or empty, or
+    ///   if `cargo metadata` fails to run or its output cannot be parsed.
     /// * `BuildActionError::WdkMetadataParse` - Error Parsing WDK metadata from
     ///   Cargo.toml, not a valid driver project/workspace.
     /// * `BuildActionError::WdkBuildConfig` - If there is an error setting up
     ///   Path for the tools or when failed to detect WDK build number.
     /// * `BuildActionError::Io` - Wraps all possible IO errors.
-    /// * `BuildActionError::CommandExecution` - If there is an error executing
-    ///   a command.
+    /// * `BuildActionError::CargoRustc` - If `CARGO` is missing or empty, or if
+    ///   `cargo rustc` fails while detecting the target architecture.
     /// * `BuildActionError::NoValidRustProjectsInTheDirectory` - If no valid
     ///   Rust projects are found in the working directory.
     /// * `BuildActionError::OneOrMoreRustProjectsFailedToBuild` - If one or
@@ -310,7 +320,8 @@ impl<'a> BuildAction<'a> {
                 }
             }
             if let Err(e) = wdk_metadata {
-                // Ignore NoWdkConfigurationsDetected but propagate any other error
+                // Ignore NoWdkConfigurationsDetected but propagate any other
+                // error
                 if !matches!(e, TryFromCargoMetadataError::NoWdkConfigurationsDetected) {
                     return Err(BuildActionError::WdkMetadataParse(e));
                 }
@@ -345,7 +356,8 @@ impl<'a> BuildAction<'a> {
             self.build_and_package(working_dir, &wdk_metadata, package)?;
 
             if let Err(e) = wdk_metadata {
-                // Ignore NoWdkConfigurationsDetected but propagate any other error
+                // Ignore NoWdkConfigurationsDetected but propagate any other
+                // error
                 if !matches!(e, TryFromCargoMetadataError::NoWdkConfigurationsDetected) {
                     return Err(BuildActionError::WdkMetadataParse(e));
                 }
@@ -369,11 +381,16 @@ impl<'a> BuildAction<'a> {
         if self.locked {
             other_options.push("--locked".to_string());
         }
-        let cargo_metadata = self.metadata.get_cargo_metadata_at_path(
-            &working_dir_path_trimmed,
-            other_options,
-            self.features,
-        )?;
+        let cargo = cargo_path().map_err(BuildActionError::CargoMetadata)?;
+        let cargo_metadata = self
+            .metadata
+            .get_cargo_metadata_at_path(
+                Path::new(&cargo),
+                &working_dir_path_trimmed,
+                other_options,
+                self.features,
+            )
+            .map_err(|error| BuildActionError::CargoMetadata(error.into()))?;
         Ok(cargo_metadata)
     }
 
@@ -447,6 +464,9 @@ impl<'a> BuildAction<'a> {
                 target_dir: &target_dir,
                 target_arch: &target_arch,
                 sign_mode: self.sign_mode.clone(),
+                inf2cat_args: self.inf2cat_args.clone(),
+                stampinf_args: self.stampinf_args.clone(),
+                infverif_args: self.infverif_args.clone(),
                 sample_class: self.is_sample_class,
                 driver_model,
                 target_platform: self.target_platform,
@@ -558,8 +578,14 @@ impl<'a> BuildAction<'a> {
     /// # Returns
     /// * `CpuArchitecture` - if the command succeeds and a valid architecture
     ///   is parsed from the output
-    /// * `BuildActionError` - if the command fails to execute or an unsupported
-    ///   architecture is detected or if no target architecture was detected
+    ///
+    /// # Errors
+    /// * [`BuildActionError::CargoRustc`] - If `CARGO` is missing or empty, or
+    ///   if the command fails.
+    /// * [`BuildActionError::CannotDetectTargetArch`] - If the output is not
+    ///   valid UTF-8 or does not contain a nonempty target architecture.
+    /// * [`BuildActionError::UnsupportedArchitecture`] - If the reported target
+    ///   architecture is not supported.
     fn get_target_arch_from_cargo_rustc(
         &self,
         working_dir: &Path,
@@ -571,9 +597,8 @@ impl<'a> BuildAction<'a> {
         let feature_args = features_to_cargo_args(self.features);
         args.extend(feature_args.iter().map(String::as_str));
         args.extend(["--", "--print", "cfg"]);
-        let output = self
-            .command_exec
-            .run("cargo", &args, None, Some(working_dir))?;
+        let output = run_cargo(self.command_exec, &args, Some(working_dir))
+            .map_err(BuildActionError::CargoRustc)?;
         let stdout = std::str::from_utf8(&output.stdout)
             .map_err(|_| BuildActionError::CannotDetectTargetArch)?;
         let arch = stdout.lines().find_map(|line| {
