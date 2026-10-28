@@ -1172,10 +1172,8 @@ impl Config {
     }
 
     /// Returns a [`Vec`] of [`LinkDirective`]s for the [`ApiSubset`]'s variant
-    /// [`ApiSubset::Hid`].
-    ///
-    /// WDM/KMDF drivers link `VhfKm`, while UMDF drivers link `VhfUm`.
-    /// The import library for the display miniport interface.
+    /// [`ApiSubset::Display`]: the import library for the display miniport
+    /// interface.
     ///
     /// `displib.lib` is what provides `DxgkInitialize` and
     /// `DxgkInitializeDisplayOnlyDriver`. Measured with
@@ -1194,7 +1192,10 @@ impl Config {
         }
     }
 
-    #[tracing::instrument(level = "trace")]
+    /// Returns a [`Vec`] of [`LinkDirective`]s for the [`ApiSubset`]'s variant
+    /// [`ApiSubset::Hid`].
+    ///
+    /// WDM/KMDF drivers link `VhfKm`, while UMDF drivers link `VhfUm`.
     fn hid_libraries(&self) -> Vec<LinkDirective> {
         match &self.driver_config {
             DriverConfig::Wdm | DriverConfig::Kmdf(_) => {
